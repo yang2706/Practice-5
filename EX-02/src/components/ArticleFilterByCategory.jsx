@@ -1,51 +1,58 @@
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function ArticleFilterByCategory() {
   const [articles, setArticles] = useState([]);
-  // Fetch all articles when component mounts
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+
   useEffect(() => {
-    fetchArticles();
+    axios.get('http://localhost:5000/categories')
+      .then(res => setCategories(res.data));
+
+    axios.get('http://localhost:5000/articles')
+      .then(res => setArticles(res.data));
   }, []);
 
-  const fetchArticles = async () => {
-    // Fetch articles from the API
+  const applyFilters = async () => {
+    if (!selectedCategoryId) {
+      const res = await axios.get('http://localhost:5000/articles');
+      setArticles(res.data);
+      return;
+    }
+
+    const res = await axios.get(
+      `http://localhost:5000/categories/${selectedCategoryId}/articles`
+    );
+    setArticles(res.data);
   };
 
-  const fetchCategories = async () => {
-    // Fetch categories from the API
-  }
+  const resetFilters = async () => {
+    setSelectedCategoryId('');
+    const res = await axios.get('http://localhost:5000/articles');
+    setArticles(res.data);
+  };
 
   return (
     <div>
-      <h2>Articles</h2>
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <label htmlFor="categoryFilter">Filter by Category:</label>
-        <select id="categoryFilter">
-          <option value="">All Categories</option>
-          {/* Options for categories */}
-        </select>
+      <h2>Filter by Category</h2>
 
-        <button
-          onClick={() => {
-            // Logic to apply filters
-          }}
-        >Apply Filters</button>
-        <button
-          onClick={() => {
-            // Logic to reset filters
-          }}
-        >Reset Filters</button>
-      </div>
+      <select
+        value={selectedCategoryId}
+        onChange={(e) => setSelectedCategoryId(e.target.value)}
+      >
+        <option value="">All Categories</option>
+        {categories.map(c => (
+          <option key={c.id} value={c.id}>{c.name}</option>
+        ))}
+      </select>
+
+      <button onClick={applyFilters}>Apply</button>
+      <button onClick={resetFilters}>Reset</button>
 
       <ul>
-        {articles.map(article => (
-          <li key={article.id}>
-            <strong>{article.title}</strong> <br />
-            <small>By Journalist #{article.journalistId} | Category #{article.categoryId}</small><br />
-            <button disabled>Delete</button>
-            <button disabled>Update</button>
-            <button disabled>View</button>
-          </li>
+        {articles.map(a => (
+          <li key={a.id}>{a.title}</li>
         ))}
       </ul>
     </div>
